@@ -109,7 +109,7 @@ for area in selected_market_areas:
          "M1": 0, "M2": 0, "M3": 0, "M4": 0, "M5": 0, "M6": 0, "M7": 0, "M8": 0, "M9": 0, "M10": 0, "M11": 0, "M12": 0},
     ]
     st.write("Enter the parameters for each brand using the table below:")
-edited_table = st.experimental_data_editor(default_table, key=f"market_{area}_table", num_rows=3)
+    edited_table = st.experimental_data_editor(default_table, key=f"market_{area}_table", num_rows=3)
     # Convert table to dictionary: key = brand, value = parameters dict
     area_dict = {}
     for row in edited_table:
