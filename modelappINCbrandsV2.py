@@ -214,8 +214,7 @@ for i in range(int(num_warehouses)):
                                     step=1,
                                     key=f"num_employees_{i}")
     
-    # For MAIN warehouses in Main Regionals: if serving more than one market,
-    # require additional shipping inputs for each additional market (not primary)
+    # For MAIN warehouses in Main Regionals: require additional shipping inputs for each additional market (not primary)
     land_shipping_data = {}
     if wh_type == "MAIN" and layout_type == "Main Regionals" and len(served_markets) > 1:
         st.markdown(f"#### Additional Land Shipping Inputs for Warehouse {i+1} (Main Regionals)", unsafe_allow_html=True)
@@ -267,7 +266,7 @@ for i in range(int(num_warehouses)):
                                       format="%d",
                                       key=f"lt_shipping_{i}")
         shipping_cost_40hc = st.number_input(f"Enter Shipping Cost for a 40HC container (per container, in $) from Israel to Warehouse {i+1} (MAIN)",
-                                             min_value=0,
+                                             min_value=0.0,
                                              value=2000.0,
                                              step=1.0,
                                              format="%.0f",
@@ -276,13 +275,13 @@ for i in range(int(num_warehouses)):
         wh_dict["shipping_cost_40hc"] = shipping_cost_40hc
     elif wh_type == "FRONT":
         front_shipping_cost_40 = st.number_input(f"Enter Shipping Cost from MAIN warehouse to Warehouse {i+1} (FRONT) for a 40ft HC container (in $)",
-                                                  min_value=0,
+                                                  min_value=0.0,
                                                   value=500.0,
                                                   step=1.0,
                                                   format="%.0f",
                                                   key=f"front_shipping_cost_40_{i}")
         front_shipping_cost_53 = st.number_input(f"Enter Shipping Cost from MAIN warehouse to Warehouse {i+1} (FRONT) for a 53ft HC container (in $)",
-                                                  min_value=0,
+                                                  min_value=0.0,
                                                   value=600.0,
                                                   step=1.0,
                                                   format="%.0f",
