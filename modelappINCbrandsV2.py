@@ -235,12 +235,12 @@ for i in range(int(num_warehouses)):
     
     if wh_type == "MAIN":
         lt_shipping = st.number_input(f"Enter Lead Time (days) for shipping from Israel to Warehouse {i+1} (MAIN)", min_value=0, value=5, step=1, format="%d", key=f"lt_shipping_{i}")
-        shipping_cost_40hc = st.number_input(f"Enter Shipping Cost for a 40HC container (per container, in $) from Israel to Warehouse {i+1} (MAIN)", min_value=0, value=2000, step=1, format="%.0f", key=f"shipping_cost_40hc_{i}")
+        shipping_cost_40hc = st.number_input(f"Enter Shipping Cost for a 40HC container (per container, in $) from Israel to Warehouse {i+1} (MAIN)", min_value=0, value=2000.0, step=1, format="%.0f", key=f"shipping_cost_40hc_{i}")
         wh_dict["lt_shipping"] = lt_shipping
         wh_dict["shipping_cost_40hc"] = shipping_cost_40hc
     elif wh_type == "FRONT":
-        front_shipping_cost_40 = st.number_input(f"Enter Shipping Cost from MAIN warehouse to Warehouse {i+1} (FRONT) for a 40ft HC container (in $)", min_value=0, value=500, step=1, format="%.0f", key=f"front_shipping_cost_40_{i}")
-        front_shipping_cost_53 = st.number_input(f"Enter Shipping Cost from MAIN warehouse to Warehouse {i+1} (FRONT) for a 53ft HC container (in $)", min_value=0, value=600, step=1, format="%.0f", key=f"front_shipping_cost_53_{i}")
+        front_shipping_cost_40 = st.number_input(f"Enter Shipping Cost from MAIN warehouse to Warehouse {i+1} (FRONT) for a 40ft HC container (in $)", min_value=0, value=500.0, step=1, format="%.0f", key=f"front_shipping_cost_40_{i}")
+        front_shipping_cost_53 = st.number_input(f"Enter Shipping Cost from MAIN warehouse to Warehouse {i+1} (FRONT) for a 53ft HC container (in $)", min_value=0, value=600.0, step=1, format="%.0f", key=f"front_shipping_cost_53_{i}")
         wh_dict["front_shipping_cost_40"] = front_shipping_cost_40
         wh_dict["front_shipping_cost_53"] = front_shipping_cost_53
         
@@ -521,7 +521,7 @@ st.markdown("<p class='subheader-font'>Shipping Cost Calculation</p>", unsafe_al
 container_capacity_40 = st.number_input(
     "Container Capacity for 40ft HC (units, default 600)",
     min_value=0,
-    value=600,
+    value=600.0,
     step=1,
     format="%d"
 )
