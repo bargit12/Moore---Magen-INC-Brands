@@ -44,13 +44,9 @@ layout_type = st.radio(
 if layout_type == "Main Regionals":
     st.info("Note: With 'Main Regionals', all warehouses must be of type MAIN.")
 
-# Note: We no longer use a global unit cost for inventory financing.
-global_unit_cost = st.number_input(
-    "Global Unit (4 Panels) Cost (for non-brand-specific calculations)",
-    min_value=0.0,
-    value=80.0,
-    step=1.0
-)
+# -------------------------
+# (Global unit cost field removed - all calculations are now based on brand-specific pricing)
+# -------------------------
 
 # Calculate Z_value using norm.ppf
 Z_value = norm.ppf(service_level)
@@ -194,9 +190,11 @@ for i in range(int(num_warehouses)):
     if location not in served_markets:
         st.error(f"Warehouse {i+1} location '{location}' must be included in its served market areas!")
     
-    rent_pricing_method = st.radio(f"Select Rent Pricing Method for Warehouse {i+1} (Price per Year)",
-                                   options=["Fixed Rent Price", "Square Foot Rent Price"],
-                                   key=f"rent_method_{i}")
+    rent_pricing_method = st.radio(
+        f"Select Rent Pricing Method for Warehouse {i+1} (Price per Year)",
+        options=["Fixed Rent Price", "Square Foot Rent Price"],
+        key=f"rent_method_{i}"
+    )
     if rent_pricing_method == "Fixed Rent Price":
         rent_price = st.number_input(
             f"Enter Fixed Rent Price (per year, in $) for Warehouse {i+1}",
@@ -237,7 +235,7 @@ for i in range(int(num_warehouses)):
         key=f"num_employees_{i}"
     )
     
-    # For MAIN warehouses in Main Regionals: if serving more than one market, require additional shipping inputs for each additional market (not primary)
+    # For MAIN warehouses in Main Regionals that serve more than one market, require additional shipping inputs for each additional market (not primary)
     land_shipping_data = {}
     if wh_type == "MAIN" and layout_type == "Main Regionals" and len(served_markets) > 1:
         st.markdown(f"#### Additional Land Shipping Inputs for Warehouse {i+1} (Main Regionals)", unsafe_allow_html=True)
@@ -364,6 +362,7 @@ if market_not_served:
 # -------------------------
 # Helper Functions for Brands
 # -------------------------
+
 def compute_annual_forecast_for_area(area):
     total = 0
     if area in market_area_data:
@@ -547,7 +546,6 @@ if st.button("Calculate Inventory Financing"):
                     overall_breakdown[brand]["avg_daily_demand"] += breakdown[brand]["avg_daily_demand"]
                     overall_breakdown[brand]["front_contrib"] += breakdown[brand].get("front_contrib", 0)
         for brand in BRANDS:
-            # For Main Regionals, we assume LT=1 for aggregated calculation.
             safety_stock = overall_breakdown[brand]["std_sum"] * sqrt(1) * Z_value + overall_breakdown[brand]["front_contrib"]
             avg_inventory = (overall_breakdown[brand]["annual_forecast"] / 12.0) + safety_stock
             overall_breakdown[brand]["safety_stock"] = safety_stock
@@ -615,7 +613,7 @@ if st.button("Calculate Shipping Costs"):
                 for m in range(12):
                     monthly_forecast = 0
                     for area in wh["served_markets"]:
-                        monthly_forecast += sum(market_area_data[area][brand]["forecast_demand"][m]
+                        monthly_forecast += sum(market_area_data[area][brand]["forecast_demand"][m] 
                                                 for brand in market_area_data[area])
                     weekly_demand = monthly_forecast / 4.0
                     cost_40_unit = wh["front_shipping_cost_40"] / container_capacity_40
@@ -679,8 +677,7 @@ if st.button("Submit Data"):
     st.write("Global Parameters:", {
         "interest_rate": f"{interest_rate} %",
         "service_level": service_level,
-        "layout_type": layout_type,
-        "global_unit_cost": f"${global_unit_cost}"
+        "layout_type": layout_type
     })
     st.write("Brand Unit Prices:", brand_unit_prices)
     st.write("Market Area Data:", market_area_data)
