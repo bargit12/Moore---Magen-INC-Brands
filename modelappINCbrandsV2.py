@@ -44,20 +44,19 @@ layout_type = st.radio(
 if layout_type == "Main Regionals":
     st.info("Note: With 'Main Regionals', all warehouses must be of type MAIN.")
 
-# Note: Global unit_cost is no longer used for inventory financing since each brand has its own pricing.
-# Still, it may be used in other parts of the model if needed.
+# Note: We no longer use a global unit cost for inventory financing.
 global_unit_cost = st.number_input(
-    "Global Unit (4 Panels) Cost (per unit, in $) (for non-brand-specific calculations)",
+    "Global Unit (4 Panels) Cost (for non-brand-specific calculations)",
     min_value=0.0,
     value=80.0,
-    step=1.0,
+    step=1.0
 )
 
 # Calculate Z_value using norm.ppf
 Z_value = norm.ppf(service_level)
 
 # -------------------------
-# Brand Pricing
+# Brand Pricing: Each brand gets its own unit price (per unit of 4 panels)
 # -------------------------
 st.markdown("<p class='subheader-font'>Brand Pricing</p>", unsafe_allow_html=True)
 BRANDS = ["Heliocol", "SunStar", "SunValue"]
@@ -77,7 +76,7 @@ for brand in BRANDS:
 st.markdown("<p class='subheader-font'>Rental Parameters</p>", unsafe_allow_html=True)
 
 sq_ft_per_unit = st.number_input(
-    "Square feet required per unit (4 Panels) - (default 0.8)",
+    "Square feet required per unit (4 Panels) (default 0.8)",
     min_value=0.0,
     value=0.8,
     step=0.1,
@@ -195,65 +194,78 @@ for i in range(int(num_warehouses)):
     if location not in served_markets:
         st.error(f"Warehouse {i+1} location '{location}' must be included in its served market areas!")
     
-    rent_pricing_method = st.radio(f"Select Rent Pricing Method for Warehouse {i+1} (Price per Year)", options=["Fixed Rent Price", "Square Foot Rent Price"], key=f"rent_method_{i}")
+    rent_pricing_method = st.radio(f"Select Rent Pricing Method for Warehouse {i+1} (Price per Year)",
+                                   options=["Fixed Rent Price", "Square Foot Rent Price"],
+                                   key=f"rent_method_{i}")
     if rent_pricing_method == "Fixed Rent Price":
-        rent_price = st.number_input(f"Enter Fixed Rent Price (per year, in $) for Warehouse {i+1}",
-                                     min_value=0.0,
-                                     value=1000.0,
-                                     step=1.0,
-                                     format="%.0f",
-                                     key=f"fixed_rent_{i}")
+        rent_price = st.number_input(
+            f"Enter Fixed Rent Price (per year, in $) for Warehouse {i+1}",
+            min_value=0.0,
+            value=1000.0,
+            step=1.0,
+            format="%.0f",
+            key=f"fixed_rent_{i}"
+        )
     else:
-        rent_price = st.number_input(f"Enter Rent Price per Square Foot (per year, in $) for Warehouse {i+1}",
-                                     min_value=0.0,
-                                     value=10.0,
-                                     step=1.0,
-                                     format="%.0f",
-                                     key=f"sqft_rent_{i}")
+        rent_price = st.number_input(
+            f"Enter Rent Price per Square Foot (per year, in $) for Warehouse {i+1}",
+            min_value=0.0,
+            value=10.0,
+            step=1.0,
+            format="%.0f",
+            key=f"sqft_rent_{i}"
+        )
     
-    avg_employee_salary = st.number_input(f"Enter Average Annual Salary per Employee for Warehouse {i+1} (in $)",
-                                          min_value=0,
-                                          value=50000,
-                                          step=1000,
-                                          format="%d",
-                                          key=f"employee_salary_{i}")
+    avg_employee_salary = st.number_input(
+        f"Enter Average Annual Salary per Employee for Warehouse {i+1} (in $)",
+        min_value=0,
+        value=50000,
+        step=1000,
+        format="%d",
+        key=f"employee_salary_{i}"
+    )
     
     if wh_type == "MAIN":
         default_emp = 3 if len(served_markets) == 1 else 4
     else:
         default_emp = 2
-    num_employees = st.number_input(f"Enter Number of Employees for Warehouse {i+1}",
-                                    min_value=0,
-                                    value=default_emp,
-                                    step=1,
-                                    key=f"num_employees_{i}")
+    num_employees = st.number_input(
+        f"Enter Number of Employees for Warehouse {i+1}",
+        min_value=0,
+        value=default_emp,
+        step=1,
+        key=f"num_employees_{i}"
+    )
     
-    # For MAIN warehouses in Main Regionals that serve more than one market,
-    # require additional shipping inputs for each additional market (not primary)
+    # For MAIN warehouses in Main Regionals: if serving more than one market, require additional shipping inputs for each additional market (not primary)
     land_shipping_data = {}
     if wh_type == "MAIN" and layout_type == "Main Regionals" and len(served_markets) > 1:
         st.markdown(f"#### Additional Land Shipping Inputs for Warehouse {i+1} (Main Regionals)", unsafe_allow_html=True)
         # Assume the first market is primary; for each additional market, require:
         for add_area in served_markets[1:]:
             distance_label = f"Distance (miles) from warehouse {location} to area {add_area}"
-            distance_val = st.number_input(distance_label,
-                                           min_value=0.0,
-                                           value=0.0,
-                                           step=0.1,
-                                           format="%.1f",
-                                           key=f"dist_{i}_{add_area}")
+            distance_val = st.number_input(
+                distance_label,
+                min_value=0.0,
+                value=0.0,
+                step=0.1,
+                format="%.1f",
+                key=f"dist_{i}_{add_area}"
+            )
             if add_area in market_area_data:
                 brand_avg_sizes = [bdata["avg_order_size"] for bdata in market_area_data[add_area].values()]
                 area_avg_order = sum(brand_avg_sizes) / len(brand_avg_sizes) if brand_avg_sizes else 0
             else:
                 area_avg_order = 0
             cost_label = f"Shipping cost per average order of {area_avg_order:.0f} units per mile for area {add_area}"
-            cost_val = st.number_input(cost_label,
-                                       min_value=0.0,
-                                       value=0.0,
-                                       step=0.1,
-                                       format="%.2f",
-                                       key=f"cost_{i}_{add_area}")
+            cost_val = st.number_input(
+                cost_label,
+                min_value=0.0,
+                value=0.0,
+                step=0.1,
+                format="%.2f",
+                key=f"cost_{i}_{add_area}"
+            )
             if cost_val == 0:
                 st.error(f"Please enter a non-zero shipping cost for average order for area {add_area} in warehouse {location}.")
             land_shipping_data[add_area] = {
@@ -274,33 +286,41 @@ for i in range(int(num_warehouses)):
         wh_dict["land_shipping_data"] = land_shipping_data
     
     if wh_type == "MAIN":
-        lt_shipping = st.number_input(f"Enter Lead Time (days) for shipping from Israel to Warehouse {i+1} (MAIN)",
-                                      min_value=0,
-                                      value=5,
-                                      step=1,
-                                      format="%d",
-                                      key=f"lt_shipping_{i}")
-        shipping_cost_40hc = st.number_input(f"Enter Shipping Cost for a 40HC container (per container, in $) from Israel to Warehouse {i+1} (MAIN)",
-                                             min_value=0.0,
-                                             value=2000.0,
-                                             step=1.0,
-                                             format="%.0f",
-                                             key=f"shipping_cost_40hc_{i}")
+        lt_shipping = st.number_input(
+            f"Enter Lead Time (days) for shipping from Israel to Warehouse {i+1} (MAIN)",
+            min_value=0,
+            value=5,
+            step=1,
+            format="%d",
+            key=f"lt_shipping_{i}"
+        )
+        shipping_cost_40hc = st.number_input(
+            f"Enter Shipping Cost for a 40HC container (per container, in $) from Israel to Warehouse {i+1} (MAIN)",
+            min_value=0.0,
+            value=2000.0,
+            step=1.0,
+            format="%.0f",
+            key=f"shipping_cost_40hc_{i}"
+        )
         wh_dict["lt_shipping"] = lt_shipping
         wh_dict["shipping_cost_40hc"] = shipping_cost_40hc
     elif wh_type == "FRONT":
-        front_shipping_cost_40 = st.number_input(f"Enter Shipping Cost from MAIN warehouse to Warehouse {i+1} (FRONT) for a 40ft HC container (in $)",
-                                                  min_value=0.0,
-                                                  value=500.0,
-                                                  step=1.0,
-                                                  format="%.0f",
-                                                  key=f"front_shipping_cost_40_{i}")
-        front_shipping_cost_53 = st.number_input(f"Enter Shipping Cost from MAIN warehouse to Warehouse {i+1} (FRONT) for a 53ft HC container (in $)",
-                                                  min_value=0.0,
-                                                  value=600.0,
-                                                  step=1.0,
-                                                  format="%.0f",
-                                                  key=f"front_shipping_cost_53_{i}")
+        front_shipping_cost_40 = st.number_input(
+            f"Enter Shipping Cost from MAIN warehouse to Warehouse {i+1} (FRONT) for a 40ft HC container (in $)",
+            min_value=0.0,
+            value=500.0,
+            step=1.0,
+            format="%.0f",
+            key=f"front_shipping_cost_40_{i}"
+        )
+        front_shipping_cost_53 = st.number_input(
+            f"Enter Shipping Cost from MAIN warehouse to Warehouse {i+1} (FRONT) for a 53ft HC container (in $)",
+            min_value=0.0,
+            value=600.0,
+            step=1.0,
+            format="%.0f",
+            key=f"front_shipping_cost_53_{i}"
+        )
         wh_dict["front_shipping_cost_40"] = front_shipping_cost_40
         wh_dict["front_shipping_cost_53"] = front_shipping_cost_53
         
@@ -312,9 +332,11 @@ for i in range(int(num_warehouses)):
                 main_wh_options.append(option_str)
                 main_wh_mapping[option_str] = j
         if main_wh_options:
-            serving_central = st.selectbox(f"Select the MAIN warehouse serving Warehouse {i+1} (FRONT)",
-                                           options=main_wh_options,
-                                           key=f"serving_central_{i}")
+            serving_central = st.selectbox(
+                f"Select the MAIN warehouse serving Warehouse {i+1} (FRONT)",
+                options=main_wh_options,
+                key=f"serving_central_{i}"
+            )
             wh_dict["serving_central"] = serving_central
             main_wh_index = main_wh_mapping.get(serving_central)
             if main_wh_index is not None:
@@ -342,7 +364,6 @@ if market_not_served:
 # -------------------------
 # Helper Functions for Brands
 # -------------------------
-
 def compute_annual_forecast_for_area(area):
     total = 0
     if area in market_area_data:
@@ -499,35 +520,15 @@ if st.button("Calculate Inventory Financing"):
         if main_wh is None:
             st.error("No MAIN warehouse found for 'Central and Fronts' layout.")
         else:
-            agg_annual = 0
-            for area in main_wh["served_markets"]:
-                agg_annual += compute_annual_forecast_for_area(area)
-            LT = main_wh.get("lt_shipping", 0)
-            agg_std = 0
-            for area in main_wh["served_markets"]:
-                agg_std += compute_std_sum_for_area(area)
-            agg_safety = agg_std * sqrt(LT) * Z_value
-            if layout_type == "Central and Fronts":
-                front_total = 0
-                for wh in warehouse_data:
-                    if wh["type"] == "FRONT":
-                        for area in wh["served_markets"]:
-                            front_total += compute_daily_demand_sum_for_area(area)
-                agg_safety += 12 * front_total
-            agg_avg_inventory = (agg_annual / 12.0) + agg_safety
-            agg_fin_cost = agg_avg_inventory * 1.08 * (interest_rate / 100.0) * global_unit_cost
-
-            st.subheader("Aggregated Inventory Financing Results")
-            st.write(f"Total Annual Forecast (all areas): {agg_annual:.2f} units")
-            st.write(f"Aggregated Safety Stock: {agg_safety:.2f} units")
-            st.write(f"Aggregated Average Inventory: {agg_avg_inventory:.2f} units")
-            st.write(f"Aggregated Financing Cost (per year): ${agg_fin_cost:.2f}")
-
             breakdown = compute_inventory_breakdown(main_wh, interest_rate, brand_unit_prices, Z_value, layout_type)
+            total_brand_avg = sum(breakdown[brand]["avg_inventory"] for brand in BRANDS)
+            total_brand_fin = sum(breakdown[brand]["financing_cost"] for brand in BRANDS)
+            total_brand_safe = sum(breakdown[brand]["safety_stock"] for brand in BRANDS)
+            st.subheader("Aggregated Inventory Financing Results")
+            st.write(f"Aggregated Average Inventory (all brands): {total_brand_avg:.2f} units")
+            st.write(f"Aggregated Safety Stock (all brands): {total_brand_safe:.2f} units")
+            st.write(f"Aggregated Financing Cost (per year, all brands): ${total_brand_fin:.2f}")
             st.subheader("Inventory Financing Breakdown by Brand")
-            total_brand_avg = 0
-            total_brand_fin = 0
-            total_brand_safe = 0
             for brand in BRANDS:
                 bdata = breakdown[brand]
                 st.write(f"**Brand: {brand}**")
@@ -535,38 +536,39 @@ if st.button("Calculate Inventory Financing"):
                 st.write(f"  - Safety Stock: {bdata['safety_stock']:.2f} units")
                 st.write(f"  - Average Inventory: {bdata['avg_inventory']:.2f} units")
                 st.write(f"  - Financing Cost: ${bdata['financing_cost']:.2f}")
-                total_brand_avg += bdata["avg_inventory"]
-                total_brand_fin += bdata["financing_cost"]
-                total_brand_safe += bdata["safety_stock"]
-            st.write("---")
-            st.write(f"**Total (Brands Combined):**")
-            st.write(f"  - Average Inventory: {total_brand_avg:.2f} units")
-            st.write(f"  - Safety Stock: {total_brand_safe:.2f} units")
-            st.write(f"  - Financing Cost (per year): ${total_brand_fin:.2f}")
     elif layout_type == "Main Regionals":
-        overall_avg_inventory = 0
-        overall_safety = 0
+        overall_breakdown = {brand: {"annual_forecast": 0, "std_sum": 0, "avg_daily_demand": 0, "front_contrib": 0} for brand in BRANDS}
         for wh in warehouse_data:
             if wh["type"] == "MAIN":
-                wh_annual = 0
-                for area in wh["served_markets"]:
-                    wh_annual += compute_annual_forecast_for_area(area)
-                LT = wh.get("lt_shipping", 0)
-                wh_std = 0
-                for area in wh["served_markets"]:
-                    wh_std += compute_std_sum_for_area(area)
-                safety_stock_wh = wh_std * sqrt(LT) * Z_value
-                avg_inventory_wh = (wh_annual / 12.0) + safety_stock_wh
-                overall_avg_inventory += avg_inventory_wh
-                overall_safety += safety_stock_wh
-        total_avg_inventory = overall_avg_inventory
-        total_safety = overall_safety
-        financing_cost = overall_avg_inventory * 1.08 * (interest_rate / 100.0) * global_unit_cost
-        st.subheader("Inventory Financing Results (Main Regionals)")
-        st.write(f"Overall Safety Stock: {total_safety:.2f} units")
-        st.write(f"Overall Average Inventory: {total_avg_inventory:.2f} units")
-        st.write(f"Overall Financing Cost (per year): ${financing_cost:.2f}")
-
+                breakdown = compute_inventory_breakdown(wh, interest_rate, brand_unit_prices, Z_value, layout_type)
+                for brand in BRANDS:
+                    overall_breakdown[brand]["annual_forecast"] += breakdown[brand]["annual_forecast"]
+                    overall_breakdown[brand]["std_sum"] += breakdown[brand]["std_sum"]
+                    overall_breakdown[brand]["avg_daily_demand"] += breakdown[brand]["avg_daily_demand"]
+                    overall_breakdown[brand]["front_contrib"] += breakdown[brand].get("front_contrib", 0)
+        for brand in BRANDS:
+            # For Main Regionals, we assume LT=1 for aggregated calculation.
+            safety_stock = overall_breakdown[brand]["std_sum"] * sqrt(1) * Z_value + overall_breakdown[brand]["front_contrib"]
+            avg_inventory = (overall_breakdown[brand]["annual_forecast"] / 12.0) + safety_stock
+            overall_breakdown[brand]["safety_stock"] = safety_stock
+            overall_breakdown[brand]["avg_inventory"] = avg_inventory
+            overall_breakdown[brand]["financing_cost"] = avg_inventory * 1.08 * (interest_rate / 100.0) * brand_unit_prices[brand]
+        total_brand_avg = sum(overall_breakdown[brand]["avg_inventory"] for brand in BRANDS)
+        total_brand_fin = sum(overall_breakdown[brand]["financing_cost"] for brand in BRANDS)
+        total_brand_safe = sum(overall_breakdown[brand]["safety_stock"] for brand in BRANDS)
+        st.subheader("Aggregated Inventory Financing Results (Main Regionals)")
+        st.write(f"Aggregated Average Inventory (all brands): {total_brand_avg:.2f} units")
+        st.write(f"Aggregated Safety Stock (all brands): {total_brand_safe:.2f} units")
+        st.write(f"Aggregated Financing Cost (per year, all brands): ${total_brand_fin:.2f}")
+        st.subheader("Inventory Financing Breakdown by Brand")
+        for brand in BRANDS:
+            bdata = overall_breakdown[brand]
+            st.write(f"**Brand: {brand}**")
+            st.write(f"  - Annual Forecast: {bdata['annual_forecast']:.2f} units")
+            st.write(f"  - Safety Stock: {bdata['safety_stock']:.2f} units")
+            st.write(f"  - Average Inventory: {bdata['avg_inventory']:.2f} units")
+            st.write(f"  - Financing Cost: ${bdata['financing_cost']:.2f}")
+            
 # -------------------------
 # Shipping (Transportation) Cost Calculation
 # -------------------------
@@ -613,7 +615,7 @@ if st.button("Calculate Shipping Costs"):
                 for m in range(12):
                     monthly_forecast = 0
                     for area in wh["served_markets"]:
-                        monthly_forecast += sum(market_area_data[area][brand]["forecast_demand"][m] 
+                        monthly_forecast += sum(market_area_data[area][brand]["forecast_demand"][m]
                                                 for brand in market_area_data[area])
                     weekly_demand = monthly_forecast / 4.0
                     cost_40_unit = wh["front_shipping_cost_40"] / container_capacity_40
